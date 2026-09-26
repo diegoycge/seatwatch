@@ -69,8 +69,29 @@ def _context(conn, o: dict) -> dict:
             "route_median_miles": mid}
 
 
+def connectivity() -> dict:
+    """Reachability of seats.aero and ntfy from this sandbox. Uses no quota (no API key is sent)."""
+    import urllib.error
+    import urllib.request
+    out = {"key_present": bool(os.environ.get("SEATS_AERO_KEY")) or Path(config.KEY_PATH).exists()}
+    for name, url in (("seats.aero", "https://seats.aero/partnerapi/search?origin_airport=SFO&destination_airport=NRT"),
+                      ("ntfy", "https://ntfy.sh/v1/health")):
+        try:
+            with urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": "seatwatch/1.0"}), timeout=20) as r:
+                out[name] = f"ok ({r.status})"
+        except urllib.error.HTTPError as e:  # the server answered, so the network path works
+            out[name] = f"ok ({e.code})"
+        except Exception as e:
+            out[name] = f"BLOCKED: {e}. Allow {name.split('.')[0] if name == 'ntfy' else name}" \
+                        f"{'.sh' if name == 'ntfy' else ''} in the cloud environment's network settings."
+    return out
+
+
 def poll(conn) -> dict:
     t_start = time.time()
+    net = connectivity()
+    if not str(net.get("seats.aero", "")).startswith("ok") or not net["key_present"]:
+        return {"error": "cannot poll", "connectivity": net, "to_judge": 0}
     s = db.get_settings(conn)
     p = ops.pacing(conn, s)
     runs_left = max(1, math.ceil(p["seconds_to_reset"] / 3600))
@@ -94,7 +115,7 @@ def poll(conn) -> dict:
             p = ops.pacing(conn, s)
             allowance = min(allowance, used + int(p["spendable"] / runs_left))
     out = write_pending(conn, s)
-    out.update(calls=used, allowance=allowance, jobs_run=len(results),
+    out.update(connectivity=net, calls=used, allowance=allowance, jobs_run=len(results),
                errors=[r for r in results if r.get("error")], remaining=ops.pacing(conn, s)["remaining"])
     return out
 
