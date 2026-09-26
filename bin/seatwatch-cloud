@@ -1,0 +1,7 @@
+#!/bin/bash
+# Entry point for the hourly Claude routine (runs in Anthropic's cloud, not on the Mac).
+set -euo pipefail
+REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+export SEATWATCH_DATA="${SEATWATCH_DATA:-$REPO/.cloud}"
+export SEATWATCH_CLOUD=1
+PYTHONPATH="$REPO" exec python3 -m seatwatch.cli cloud "$@"

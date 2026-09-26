@@ -1,0 +1,759 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Seatwatch</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✈</text></svg>">
+<style>
+:root {
+  --bg: #f6f7f9; --panel: #ffffff; --panel-2: #f1f3f6; --line: #e3e6eb; --line-2: #d3d8df;
+  --ink: #16191d; --ink-2: #4a525d; --ink-3: #7b8491;
+  --accent: #1f6feb; --accent-ink: #ffffff; --accent-soft: #e8f0fe;
+  --good: #1a7f37; --good-soft: #e6f4ea; --great: #8250df; --great-soft: #f1ebfd;
+  --warn: #9a6700; --warn-soft: #fff4d6; --bad: #cf222e; --bad-soft: #ffebe9;
+  --shadow: 0 1px 2px rgba(16,24,40,.06), 0 1px 3px rgba(16,24,40,.08);
+  --radius: 10px; --mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0d1014; --panel: #151a20; --panel-2: #1b2129; --line: #252c35; --line-2: #333c47;
+    --ink: #e6e9ed; --ink-2: #aab2bd; --ink-3: #7a8490;
+    --accent: #4c8dff; --accent-ink: #0b1220; --accent-soft: #16243a;
+    --good: #4ac26b; --good-soft: #13281a; --great: #b392f0; --great-soft: #241a38;
+    --warn: #d4a72c; --warn-soft: #2b2310; --bad: #ff7b72; --bad-soft: #3a1618;
+    --shadow: 0 1px 2px rgba(0,0,0,.4);
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0d1014; --panel: #151a20; --panel-2: #1b2129; --line: #252c35; --line-2: #333c47;
+  --ink: #e6e9ed; --ink-2: #aab2bd; --ink-3: #7a8490;
+  --accent: #4c8dff; --accent-ink: #0b1220; --accent-soft: #16243a;
+  --good: #4ac26b; --good-soft: #13281a; --great: #b392f0; --great-soft: #241a38;
+  --warn: #d4a72c; --warn-soft: #2b2310; --bad: #ff7b72; --bad-soft: #3a1618;
+  --shadow: 0 1px 2px rgba(0,0,0,.4);
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--ink); }
+body { font: 14px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif; -webkit-font-smoothing: antialiased; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+.num { font-variant-numeric: tabular-nums; }
+.mono { font-family: var(--mono); font-size: 12.5px; }
+.muted { color: var(--ink-3); }
+.small { font-size: 12.5px; }
+
+header { position: sticky; top: 0; z-index: 10; background: color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
+.bar { max-width: 1240px; margin: 0 auto; padding: 12px 20px 0; display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+.brand { font-weight: 700; font-size: 16px; letter-spacing: -.01em; display: flex; align-items: center; gap: 8px; }
+.brand .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ink-3); }
+.brand .dot.on { background: var(--good); box-shadow: 0 0 0 3px var(--good-soft); }
+.quota { margin-left: auto; display: flex; align-items: center; gap: 12px; font-size: 12.5px; color: var(--ink-2); }
+.meter { width: 160px; height: 8px; border-radius: 99px; background: var(--panel-2); border: 1px solid var(--line); overflow: hidden; display: flex; }
+.meter i { display: block; height: 100%; }
+.meter .bg { background: var(--accent); } .meter .od { background: var(--great); }
+nav { max-width: 1240px; margin: 0 auto; padding: 0 20px; display: flex; gap: 2px; overflow-x: auto; }
+nav button { appearance: none; border: 0; background: none; color: var(--ink-2); font: inherit; font-weight: 500;
+  padding: 10px 12px; border-bottom: 2px solid transparent; cursor: pointer; white-space: nowrap; }
+nav button:hover { color: var(--ink); }
+nav button.on { color: var(--ink); border-bottom-color: var(--accent); }
+nav .count { font-size: 11px; background: var(--panel-2); border: 1px solid var(--line); border-radius: 99px; padding: 0 6px; margin-left: 4px; color: var(--ink-2); }
+
+main { max-width: 1240px; margin: 0 auto; padding: 20px; }
+section { display: none; } section.on { display: block; }
+h2 { font-size: 18px; margin: 0 0 4px; letter-spacing: -.01em; }
+h3 { font-size: 14px; margin: 0 0 10px; }
+.lede { color: var(--ink-2); margin: 0 0 16px; max-width: 760px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); }
+.pad { padding: 16px; }
+.row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.spread { justify-content: space-between; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+@media (max-width: 900px) { .grid2, .grid3 { grid-template-columns: 1fr; } }
+.stack > * + * { margin-top: 12px; }
+
+button.btn, .btn { appearance: none; font: inherit; font-weight: 500; font-size: 13px; border-radius: 8px; padding: 6px 12px;
+  border: 1px solid var(--line-2); background: var(--panel); color: var(--ink); cursor: pointer; white-space: nowrap; }
+.btn:hover { background: var(--panel-2); text-decoration: none; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn.primary:hover { filter: brightness(1.05); }
+.btn.ghost { border-color: transparent; background: none; color: var(--ink-2); }
+.btn.ghost:hover { background: var(--panel-2); color: var(--ink); }
+.btn.danger { color: var(--bad); }
+.btn.sm { padding: 3px 8px; font-size: 12px; }
+.btn:disabled { opacity: .5; cursor: default; }
+
+label.f { display: flex; flex-direction: column; gap: 4px; font-size: 12px; font-weight: 600; color: var(--ink-2); }
+label.f .hint { font-weight: 400; color: var(--ink-3); }
+input[type=text], input[type=number], input[type=date], select, textarea {
+  font: inherit; font-size: 13.5px; color: var(--ink); background: var(--panel); border: 1px solid var(--line-2);
+  border-radius: 8px; padding: 7px 9px; min-width: 0; width: 100%; }
+input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent-soft); border-color: var(--accent); }
+input[type=checkbox] { accent-color: var(--accent); width: 15px; height: 15px; }
+.check { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink); cursor: pointer; user-select: none; }
+.chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.chip { font-size: 12.5px; border: 1px solid var(--line-2); border-radius: 99px; padding: 3px 10px; cursor: pointer; background: var(--panel); color: var(--ink-2); user-select: none; }
+.chip.on { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); font-weight: 600; }
+.form { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; }
+.form .s2 { grid-column: span 2; } .form .s3 { grid-column: span 3; } .form .s6 { grid-column: span 6; }
+@media (max-width: 900px) { .form { grid-template-columns: 1fr 1fr; } .form .s2, .form .s3, .form .s6 { grid-column: span 2; } }
+
+.badge { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: .02em; text-transform: uppercase;
+  border-radius: 6px; padding: 2px 7px; white-space: nowrap; }
+.b-great { background: var(--great-soft); color: var(--great); }
+.b-good { background: var(--good-soft); color: var(--good); }
+.b-meh { background: var(--panel-2); color: var(--ink-3); }
+.b-warn { background: var(--warn-soft); color: var(--warn); }
+.b-bad { background: var(--bad-soft); color: var(--bad); }
+.b-info { background: var(--accent-soft); color: var(--accent); }
+
+.tablewrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { text-align: left; font-size: 11.5px; font-weight: 600; color: var(--ink-3); text-transform: uppercase; letter-spacing: .04em;
+  padding: 9px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; background: var(--panel); position: sticky; top: 0; }
+td { padding: 9px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+tr:last-child td { border-bottom: 0; }
+tr.detail td { background: var(--panel-2); }
+td.r, th.r { text-align: right; }
+.route { font-weight: 600; white-space: nowrap; }
+.sub { color: var(--ink-3); font-size: 12px; }
+
+.wcard { padding: 14px 16px; }
+.wcard + .wcard { border-top: 1px solid var(--line); }
+.wtitle { font-weight: 600; font-size: 14.5px; }
+.empty { padding: 36px 16px; text-align: center; color: var(--ink-3); }
+.kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+@media (max-width: 900px) { .kpis { grid-template-columns: 1fr 1fr; } }
+.kpi { padding: 12px 14px; }
+.kpi .v { font-size: 22px; font-weight: 700; letter-spacing: -.02em; }
+.kpi .l { font-size: 12px; color: var(--ink-3); }
+
+.bars { display: flex; align-items: flex-end; gap: 3px; height: 110px; padding-top: 6px; }
+.bars .col { flex: 1; display: flex; flex-direction: column-reverse; min-width: 4px; height: 100%; }
+.bars .col i { display: block; width: 100%; border-radius: 2px 2px 0 0; }
+.bars .col .bg { background: var(--accent); } .bars .col .od { background: var(--great); }
+.bars .col.future { opacity: .25; }
+.legend { display: flex; gap: 14px; font-size: 12px; color: var(--ink-2); }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+
+.pts { display: grid; grid-template-columns: 1fr 130px; gap: 8px 12px; align-items: center; }
+.pts label { font-size: 13px; }
+.pts input { text-align: right; font-variant-numeric: tabular-nums; }
+.power { display: grid; grid-template-columns: 170px 1fr 90px; gap: 6px 10px; align-items: center; font-size: 13px; }
+.power .track { height: 8px; background: var(--panel-2); border-radius: 99px; overflow: hidden; }
+.power .track i { display: block; height: 100%; background: var(--accent); border-radius: 99px; }
+
+.feed { max-height: 520px; overflow-y: auto; }
+.feed .it { padding: 10px 14px; border-bottom: 1px solid var(--line); }
+.feed .it:last-child { border-bottom: 0; }
+.feed pre { margin: 4px 0 0; white-space: pre-wrap; font: inherit; font-size: 12.5px; color: var(--ink-2); }
+.toast { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); background: var(--ink); color: var(--bg);
+  padding: 9px 14px; border-radius: 8px; font-size: 13px; box-shadow: var(--shadow); z-index: 50; opacity: 0; transition: opacity .2s; pointer-events: none; max-width: 90vw; }
+.toast.on { opacity: 1; }
+.thr input { width: 84px; text-align: right; }
+.hidden { display: none !important; }
+.b-pass { background: var(--panel-2); color: var(--ink-3); }
+td.verdict { min-width: 230px; max-width: 300px; }
+.verdict .why { font-size: 12px; color: var(--ink-2); margin-top: 3px; }
+.cloudpill { font-size: 12px; color: var(--ink-2); border: 1px solid var(--line); border-radius: 99px; padding: 2px 9px; background: var(--panel); }
+textarea { resize: vertical; min-height: 90px; line-height: 1.45; }
+</style>
+</head>
+<body>
+<header>
+  <div class="bar">
+    <div class="brand"><span class="dot" id="svcdot" title="background service"></span>Seatwatch</div>
+    <span class="cloudpill hidden" id="cloudpill"></span>
+    <div class="quota" id="quota"></div>
+  </div>
+  <nav id="tabs">
+    <button data-tab="deals" class="on">Deals <span class="count" id="c-deals">–</span></button>
+    <button data-tab="watches">Watches <span class="count" id="c-watches">–</span></button>
+    <button data-tab="windows">Travel windows <span class="count" id="c-windows">–</span></button>
+    <button data-tab="points">Points</button>
+    <button data-tab="search">Search</button>
+    <button data-tab="activity">Activity</button>
+    <button data-tab="settings">Settings</button>
+  </nav>
+</header>
+
+<main>
+<!-- DEALS -->
+<section id="deals" class="on">
+  <div class="row spread" style="margin-bottom:12px">
+    <div>
+      <h2>Deals</h2>
+      <p class="lede" style="margin:0">Awards in your travel windows priced at or below your thresholds, and payable with the points you have. Built from cached data, so loading this page uses no API calls.</p>
+    </div>
+  </div>
+  <div class="card pad" style="margin-bottom:14px">
+    <div class="row" style="gap:14px">
+      <label class="f" style="min-width:220px">Travel window<select id="d-window"></select></label>
+      <div class="f" style="font-size:12px;font-weight:600;color:var(--ink-2)">Cabin<div class="chips" id="d-cabins"></div></div>
+      <label class="f" style="min-width:150px">Sort<select id="d-sort">
+        <option value="score">Best value</option><option value="date">Date</option><option value="miles">Fewest miles</option></select></label>
+      <div class="stack" style="margin-left:auto">
+        <label class="check"><input type="checkbox" id="d-home" checked> From my airports only</label>
+        <label class="check"><input type="checkbox" id="d-great"> Great deals only</label>
+        <label class="check hidden" id="d-claude-wrap"><input type="checkbox" id="d-claude" checked> Claude's picks only</label>
+      </div>
+    </div>
+  </div>
+  <div class="card"><div class="tablewrap" id="d-table"></div></div>
+</section>
+
+<!-- WATCHES -->
+<section id="watches">
+  <div class="row spread" style="margin-bottom:12px">
+    <div>
+      <h2>Route watches</h2>
+      <p class="lede" style="margin:0">Get an alert the moment any matching seat appears or gets cheaper. You can add these here or just describe them to Claude.</p>
+    </div>
+    <button class="btn primary" id="w-new">New watch</button>
+  </div>
+  <div class="card pad hidden" id="w-formcard" style="margin-bottom:14px">
+    <h3 id="w-formtitle">New watch</h3>
+    <form id="w-form" class="form" autocomplete="off">
+      <label class="f s2">Name<input type="text" name="name" placeholder="Tokyo for Thanksgiving"></label>
+      <label class="f s2">From <span class="hint">airports, metro codes (NYC, BAY), regions</span><input type="text" name="origins" placeholder="SFO, OAK" required></label>
+      <label class="f s2">To<input type="text" name="destinations" placeholder="TYO" required></label>
+      <label class="f">Depart from<input type="date" name="depart_start" required></label>
+      <label class="f">Depart until<input type="date" name="depart_end" required></label>
+      <label class="f">Return from <span class="hint">optional</span><input type="date" name="return_start"></label>
+      <label class="f">Return until<input type="date" name="return_end"></label>
+      <label class="f">Max miles / person<input type="number" name="max_miles" placeholder="any" min="0" step="500"></label>
+      <label class="f">Passengers<input type="number" name="pax" value="1" min="1" max="9"></label>
+      <div class="f s3">Cabins<div class="chips" data-cabins="w"></div></div>
+      <label class="f">Priority<select name="priority"><option value="5">Highest</option><option value="4">High</option><option value="3" selected>Normal</option><option value="2">Low</option><option value="1">Lowest</option></select></label>
+      <label class="f">Check about every<select name="interval_min"><option value="20">20 min</option><option value="30">30 min</option><option value="45" selected>45 min</option><option value="90">1.5 hours</option><option value="180">3 hours</option></select></label>
+      <label class="f">Programs <span class="hint">optional</span><input type="text" name="sources" placeholder="all"></label>
+      <div class="f s6 row" style="flex-direction:row;gap:16px">
+        <label class="check"><input type="checkbox" name="direct_only"> Nonstop only</label>
+        <label class="check"><input type="checkbox" name="notify" checked> Notify me</label>
+        <span style="margin-left:auto" class="row">
+          <button type="button" class="btn ghost" id="w-cancel">Cancel</button>
+          <button type="submit" class="btn primary">Save &amp; check now</button>
+        </span>
+      </div>
+    </form>
+  </div>
+  <div class="card" id="w-list"></div>
+</section>
+
+<!-- WINDOWS -->
+<section id="windows">
+  <div class="row spread" style="margin-bottom:12px">
+    <div>
+      <h2>Travel windows</h2>
+      <p class="lede" style="margin:0">Tell it when you could travel and roughly where. It sweeps from your home airports and scans whole regions on the programs you can pay with, then flags awards that beat your thresholds.</p>
+    </div>
+    <button class="btn primary" id="t-new">New window</button>
+  </div>
+  <div class="card pad hidden" id="t-formcard" style="margin-bottom:14px">
+    <h3 id="t-formtitle">New travel window</h3>
+    <form id="t-form" class="form" autocomplete="off">
+      <label class="f s2">Name<input type="text" name="name" placeholder="Winter break in Asia"></label>
+      <label class="f">Earliest departure<input type="date" name="start_date" required></label>
+      <label class="f">Latest return<input type="date" name="end_date" required></label>
+      <label class="f s2">From <span class="hint">blank = home airports</span><input type="text" name="origins" placeholder="home airports"></label>
+      <div class="f s6">Where to <span class="hint">pick regions and/or type airports or metro codes</span>
+        <div class="row"><div class="chips" id="t-regions"></div><input type="text" name="dest_airports" placeholder="e.g. TYO, LIS, CPT" style="max-width:280px"></div></div>
+      <div class="f s2">Cabins<div class="chips" data-cabins="t"></div></div>
+      <label class="f">Passengers<input type="number" name="pax" value="1" min="1" max="9"></label>
+      <label class="f">Deal strictness<select name="min_score"><option value="0.85">Loose (≤ 118% of threshold)</option><option value="1" selected>At threshold</option><option value="1.15">Strict (≤ 87%)</option><option value="1.25">Great deals only</option></select></label>
+      <div class="f s2" style="justify-content:flex-end">
+        <label class="check"><input type="checkbox" name="roundtrip" checked> Also search the way back</label>
+        <label class="check"><input type="checkbox" name="explore" checked> Scan whole regions (nearby origins)</label>
+      </div>
+      <div class="f s6 row" style="flex-direction:row;gap:16px">
+        <label class="check"><input type="checkbox" name="direct_only"> Nonstop only</label>
+        <label class="check"><input type="checkbox" name="notify" checked> Notify me about new deals</label>
+        <span style="margin-left:auto" class="row">
+          <button type="button" class="btn ghost" id="t-cancel">Cancel</button>
+          <button type="submit" class="btn primary">Save &amp; sweep now</button>
+        </span>
+      </div>
+    </form>
+  </div>
+  <div class="card" id="t-list"></div>
+</section>
+
+<!-- POINTS -->
+<section id="points">
+  <div class="row spread" style="margin-bottom:12px">
+    <div>
+      <h2>Points</h2>
+      <p class="lede" style="margin:0">Balances decide which deals count as affordable, and which programs the region scans spend calls on. Transfer ratios are in <span class="mono">seatwatch/data/partners.json</span>.</p>
+    </div>
+    <button class="btn primary" id="p-save">Save balances</button>
+  </div>
+  <div class="grid2">
+    <div class="stack">
+      <div class="card pad"><h3>Bank points</h3><div class="pts" id="p-bank"></div></div>
+      <div class="card pad"><h3>Other programs <span class="muted small">(not searchable on seats.aero)</span></h3><div class="pts" id="p-other"></div></div>
+    </div>
+    <div class="stack">
+      <div class="card pad"><h3>Airline programs</h3><div class="pts" id="p-airline"></div></div>
+    </div>
+  </div>
+  <div class="card pad" style="margin-top:16px">
+    <h3>Buying power <span class="muted small">miles you could have in each program, counting transfers</span></h3>
+    <div class="power" id="p-power"></div>
+  </div>
+</section>
+
+<!-- SEARCH -->
+<section id="search">
+  <h2>One-off search</h2>
+  <p class="lede">Runs a live query against seats.aero's cache right now and spends from the on-demand reserve (usually 1 call).</p>
+  <div class="card pad" style="margin-bottom:14px">
+    <form id="s-form" class="form" autocomplete="off">
+      <label class="f s2">From<input type="text" name="origins" placeholder="NYC" required></label>
+      <label class="f s2">To<input type="text" name="destinations" placeholder="LON, PAR" required></label>
+      <label class="f">From date<input type="date" name="start" required></label>
+      <label class="f">To date<input type="date" name="end" required></label>
+      <div class="f s2">Cabins<div class="chips" data-cabins="s"></div></div>
+      <label class="f">Max miles<input type="number" name="max_miles" placeholder="any" step="500"></label>
+      <label class="f">Passengers<input type="number" name="pax" value="1" min="1" max="9"></label>
+      <div class="f s2 row" style="flex-direction:row;align-items:flex-end;gap:12px">
+        <label class="check"><input type="checkbox" name="direct"> Nonstop</label>
+        <button type="submit" class="btn primary" style="margin-left:auto">Search</button>
+      </div>
+    </form>
+  </div>
+  <div class="card"><div class="tablewrap" id="s-table"><div class="empty">Results will show here.</div></div></div>
+</section>
+
+<!-- ACTIVITY -->
+<section id="activity">
+  <h2>Activity</h2>
+  <p class="lede">How today's API quota is being spent, and every alert sent.</p>
+  <div class="kpis" id="a-kpis"></div>
+  <div class="grid2">
+    <div class="card pad">
+      <div class="row spread"><h3 style="margin:0">Calls per hour (current quota day)</h3>
+        <div class="legend"><span><i style="background:var(--accent)"></i>background</span><span><i style="background:var(--great)"></i>on demand</span></div></div>
+      <div class="bars" id="a-bars"></div>
+      <div class="row spread sub" id="a-axis"></div>
+      <h3 style="margin-top:18px">Spent on</h3>
+      <div id="a-kinds" class="small"></div>
+    </div>
+    <div class="card">
+      <div class="pad" style="padding-bottom:6px"><h3 style="margin:0">Alerts &amp; events</h3></div>
+      <div class="feed" id="a-feed"></div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <div class="pad" style="padding-bottom:6px"><h3 style="margin:0">Jobs</h3></div>
+    <div class="tablewrap" id="a-jobs" style="max-height:420px;overflow-y:auto"></div>
+  </div>
+</section>
+
+<!-- SETTINGS -->
+<section id="settings">
+  <h2>Settings</h2>
+  <p class="lede">Changes apply on the next scheduler tick (within 30 seconds).</p>
+  <form id="g-form" autocomplete="off" class="stack">
+    <div class="grid2">
+      <div class="card pad stack">
+        <h3>Trips</h3>
+        <label class="f">Home airports <span class="hint">default origin for travel windows, e.g. JFK, EWR, LGA or NYC</span><input type="text" name="home_airports"></label>
+        <label class="f">On-demand reserve <span class="hint">calls kept back for Claude and "check now"; released gradually before the daily reset</span><input type="number" name="ondemand_reserve" min="0" max="500"></label>
+        <label class="check"><input type="checkbox" name="paused"> Pause background checks</label>
+      </div>
+      <div class="card pad stack">
+        <h3>Notifications</h3>
+        <label class="check"><input type="checkbox" name="mac_notify"> Mac notifications</label>
+        <label class="check"><input type="checkbox" name="ntfy_enabled"> Phone push via ntfy</label>
+        <label class="f">ntfy topic <span class="hint">subscribe to this exact topic in the ntfy app; anyone who knows it can read your alerts</span>
+          <div class="row" style="flex-wrap:nowrap"><input type="text" name="ntfy_topic" class="mono"><button type="button" class="btn" id="g-gen">New topic</button></div></label>
+        <label class="f">ntfy server<input type="text" name="ntfy_server"></label>
+        <div><button type="button" class="btn" id="g-test">Send test notification</button></div>
+      </div>
+    </div>
+    <div class="card pad stack" id="g-claude">
+      <h3>Claude's judgment <span class="muted small" id="g-engine"></span></h3>
+      <p class="sub" style="margin-top:-6px">In cloud mode, a Claude routine judges every new candidate each hour. Watch matches always notify you, with Claude's take attached. Travel-window deals only notify you when Claude rates them good or great.</p>
+      <label class="f">What Claude should know about you <span class="hint">cabins or airlines you love or avoid, how much you value comfort vs. miles, whether you'd fly a positioning leg, surcharge tolerance, who travels with you…</span>
+        <textarea name="judge_notes" placeholder="e.g. I value lie-flat on anything over 6 hours. Happy to position within the US on points. Avoid British Airways surcharges. Two of us travel together."></textarea></label>
+      <label class="f" style="max-width:320px">Price filter before Claude looks <span class="hint">score vs. your thresholds; lower sends Claude more candidates</span><input type="number" name="judge_min_score" step="0.05" min="0.3" max="1.5"></label>
+    </div>
+    <div class="card pad">
+      <h3>What counts as a deal</h3>
+      <p class="sub" style="margin-top:-4px">One-way miles per person at or below which an award counts as a good deal, by flight distance. Taxes above the allowance get converted to points at your cents-per-point value and added to the price.</p>
+      <div class="row" style="gap:16px;margin-bottom:12px">
+        <label class="f" style="width:160px">Point value (¢)<input type="number" name="cpp" step="0.1" min="0.5"></label>
+        <label class="f" style="width:180px">Tax allowance ($)<input type="number" name="tax_allowance_usd" min="0"></label>
+        <label class="f" style="width:200px">"Great" at score ≥<input type="number" name="great_score" step="0.05" min="1"></label>
+      </div>
+      <div class="tablewrap"><table class="thr" id="g-thr"></table></div>
+    </div>
+    <div class="row"><button type="submit" class="btn primary">Save settings</button></div>
+  </form>
+</section>
+</main>
+<div class="toast" id="toast"></div>
+
+<script>
+const CABINS = [["Y","economy","Economy"],["W","premium","Premium"],["J","business","Business"],["F","first","First"]];
+const CAB = Object.fromEntries(CABINS.map(c => [c[0], c[2]]));
+let S = null, DEALS = [], dealsWindow = "", tab = "deals";
+const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const k = n => n >= 1000 ? (n/1000).toFixed(n % 1000 ? 1 : 0).replace(/\.0$/, "") + "k" : String(n);
+const fmt = n => (n ?? 0).toLocaleString();
+const ago = ts => { if (!ts) return "never"; const m = Math.round((Date.now()/1000 - ts)/60); return m < 1 ? "just now" : m < 90 ? m + "m ago" : m < 2880 ? Math.round(m/60) + "h ago" : Math.round(m/1440) + "d ago"; };
+const dstr = d => new Date(d + "T12:00:00").toLocaleDateString(undefined, {weekday:"short", month:"short", day:"numeric"});
+const progName = s => S?.short[s] || s;
+const dayDiff = (a, b) => Math.round((Date.parse(b.slice(0, 10)) - Date.parse(a.slice(0, 10))) / 864e5);
+function toast(msg, ms = 2600) { const t = $("#toast"); t.textContent = msg; t.classList.add("on"); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove("on"), ms); }
+
+async function api(path, opts = {}) {
+  const r = await fetch(path, {...opts, headers: {"Content-Type": "application/json", "X-Seatwatch": "1", ...(opts.headers || {})}});
+  const body = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(body.error || ("HTTP " + r.status));
+  return body;
+}
+const post = (p, b) => api(p, {method: "POST", body: JSON.stringify(b || {})});
+
+// ---------- tabs
+$$("#tabs button").forEach(b => b.onclick = () => show(b.dataset.tab));
+function show(t) {
+  tab = t;
+  $$("#tabs button").forEach(b => b.classList.toggle("on", b.dataset.tab === t));
+  $$("main > section").forEach(s => s.classList.toggle("on", s.id === t));
+  try { localStorage.setItem("sw-tab", t); } catch (e) {}
+  if (t === "deals") loadDeals();
+  if (t === "activity") loadActivity();
+}
+
+// ---------- cabin chips
+function cabinChips(el, selected, onchange) {
+  el.innerHTML = CABINS.map(([c,, label]) => `<span class="chip ${selected.includes(c) ? "on" : ""}" data-c="${c}">${label}</span>`).join("");
+  el.querySelectorAll(".chip").forEach(ch => ch.onclick = () => { ch.classList.toggle("on"); onchange && onchange(); });
+}
+const chipVals = el => [...el.querySelectorAll(".chip.on")].map(c => c.dataset.c);
+const cabinNames = codes => codes.map(c => CABINS.find(x => x[0] === c)[1]).join(",");
+const codesOf = names => (names || "").split(",").map(n => (CABINS.find(x => x[1] === n.trim()) || [])[0]).filter(Boolean);
+
+// ---------- header
+function renderHeader() {
+  const p = S.pacing, bg = p.by_purpose.bg || 0, od = p.by_purpose.ondemand || 0;
+  const reset = new Date(p.reset_at * 1000).toLocaleTimeString([], {hour: "numeric", minute: "2-digit"});
+  $("#quota").innerHTML = `<span class="num"><b>${fmt(p.remaining)}</b> / ${fmt(p.limit)} calls left</span>
+    <span class="meter" title="used today: ${bg} background, ${od} on demand"><i class="bg" style="width:${bg/p.limit*100}%"></i><i class="od" style="width:${od/p.limit*100}%"></i></span>
+    <span class="num">${p.paused ? '<span class="badge b-warn">paused</span>' : `~${p.rate_per_hour}/hr`}</span><span class="muted">resets ${reset}</span>`;
+  const cp = $("#cloudpill"), c = S.cloud;
+  cp.classList.toggle("hidden", !cloudMode());
+  if (cloudMode()) cp.innerHTML = `☁ cloud · last run ${ago(c.last_job)}${c.pending ? ` · ${c.pending} awaiting Claude` : ""}${c.sync?.error ? ' · <span style="color:var(--bad)">sync error</span>' : ""}`;
+  if (cloudMode() && c.sync?.error) cp.title = c.sync.error;
+  const sch = S.scheduler, on = sch && sch.last_tick && (Date.now()/1000 - sch.last_tick) < 120;
+  $("#svcdot").classList.toggle("on", !!on);
+  $("#svcdot").title = on ? "background service running" + (sch.idle_reason ? " — " + sch.idle_reason : "") : "scheduler not running in this process";
+  $("#c-watches").textContent = S.watches.filter(w => w.enabled).length;
+  $("#c-windows").textContent = S.windows.filter(w => w.enabled).length;
+}
+
+// ---------- deals
+cabinChips($("#d-cabins"), ["Y","W","J","F"], renderDeals);
+["#d-sort", "#d-home", "#d-great", "#d-claude"].forEach(s => $(s).onchange = renderDeals);
+const cloudMode = () => S?.settings.engine === "cloud";
+$("#d-window").onchange = () => { dealsWindow = $("#d-window").value; loadDeals(); };
+
+async function loadDeals() {
+  try { DEALS = await api("/api/deals" + (dealsWindow ? "?window=" + dealsWindow : "")); } catch (e) { DEALS = []; toast(e.message); }
+  renderDeals();
+}
+function renderDeals() {
+  const sel = $("#d-window");
+  if (S) sel.innerHTML = `<option value="">All travel windows</option>` + S.windows.map(w => `<option value="${w.id}" ${String(w.id) === dealsWindow ? "selected" : ""}>${esc(w.name)}</option>`).join("");
+  const cabs = chipVals($("#d-cabins")), home = $("#d-home").checked, great = $("#d-great").checked, sort = $("#d-sort").value;
+  const claude = cloudMode() && $("#d-claude").checked;
+  $("#d-claude-wrap").classList.toggle("hidden", !cloudMode());
+  let rows = DEALS.filter(o => cabs.includes(o.cabin) && (!home || !o.positioning) && (!great || (cloudMode() ? o.verdict === "great" : o.rating === "great"))
+    && (!claude || o.verdict === "great" || o.verdict === "good"));
+  const vr = {great: 0, good: 1, pass: 3};
+  if (sort === "score" && cloudMode()) rows.sort((a, b) => ((vr[a.verdict] ?? 2) - (vr[b.verdict] ?? 2)) || b.score - a.score || a.date.localeCompare(b.date));
+  if (sort === "date") rows.sort((a, b) => a.date.localeCompare(b.date) || a.cost - b.cost);
+  if (sort === "miles") rows.sort((a, b) => a.cost - b.cost);
+  $("#c-deals").textContent = DEALS.filter(o => !o.positioning).length;
+  if (!S?.windows.length) { $("#d-table").innerHTML = `<div class="empty">No travel windows yet. <a href="#" onclick="show('windows');return false">Add one</a> and deals will show up here.</div>`; return; }
+  if (!rows.length && claude && DEALS.length) { $("#d-table").innerHTML = `<div class="empty">Claude hasn't picked any deals yet (${DEALS.filter(o => !o.verdict).length} still waiting to be judged). Untick “Claude's picks only” to see every candidate.</div>`; return; }
+  if (!rows.length) { $("#d-table").innerHTML = `<div class="empty">No deals match right now.${home && DEALS.some(o => o.positioning) ? " Untick “From my airports only” to see deals that need a positioning flight." : ""}<br><span class="small">The service keeps checking in the background.</span></div>`; return; }
+  $("#d-table").innerHTML = offerTable(rows.slice(0, 400), true) + (rows.length > 400 ? `<div class="empty small">Showing 400 of ${rows.length}.</div>` : "");
+  bindTrips($("#d-table"));
+}
+
+function offerTable(rows, dealMode) {
+  const pax = r => r.total_miles && r.total_miles !== r.cost ? `<div class="sub">${fmt(r.total_miles)} total</div>` : "";
+  const cl = cloudMode();
+  const verdictCell = o => !o.verdict ? '<span class="sub">waiting for Claude</span>'
+    : `<span class="badge b-${o.verdict}">${o.verdict}</span>${o.verdict_stale ? ' <span class="sub">(price changed)</span>' : ""}<div class="why">${esc(o.reason)}</div>`;
+  dealMode = dealMode && !cl;  // in cloud mode Claude's verdict replaces the rule-based value column
+  return `<table><thead><tr>${cl ? "<th>Claude</th>" : ""}${dealMode ? "<th>Value</th>" : ""}<th>Date</th><th>Route</th><th>Cabin</th><th class="r">Miles</th><th class="r">Taxes</th><th>Program</th><th>Pay with</th><th>Updated</th><th></th></tr></thead><tbody>` +
+    rows.map(o => `<tr>
+      ${cl ? `<td class="verdict">${verdictCell(o)}</td>` : ""}
+      ${dealMode ? `<td><span class="badge b-${o.rating}">${o.rating === "meh" ? "ok" : o.rating}</span><div class="sub num">${Math.round(o.effective/o.threshold*100)}% of ${k(o.threshold)}</div></td>` : ""}
+      <td class="num" style="white-space:nowrap">${dstr(o.date)}${o.leg === "ret" ? '<div class="sub">return</div>' : ""}</td>
+      <td><span class="route">${o.origin} → ${o.dest}</span><div class="sub">${o.direct ? "nonstop" : "connecting"}${o.airlines ? " · " + esc(o.airlines) : ""}${o.positioning ? ' · <span class="badge b-warn">positioning</span>' : ""}</div></td>
+      <td>${CAB[o.cabin]}${o.seats ? `<div class="sub">${o.seats} seat${o.seats > 1 ? "s" : ""}</div>` : ""}</td>
+      <td class="r num"><b>${fmt(o.cost)}</b>${pax(o)}</td>
+      <td class="r num">${o.taxes ? (o.currency && o.currency !== "USD" ? o.currency + " " : "$") + fmt(Math.round(o.taxes/100)) : '<span class="muted">—</span>'}</td>
+      <td style="white-space:nowrap">${esc(progName(o.source))}</td>
+      <td class="small">${o.affordable === null ? '<span class="muted">add balances</span>' : o.affordable ? esc(o.pay_with) : `<span class="badge b-bad">short</span> <span class="sub">${esc(o.pay_with)}</span>`}</td>
+      <td class="sub" style="white-space:nowrap">${o.updated_at ? ago(Date.parse(o.updated_at)/1000) : ""}</td>
+      <td style="white-space:nowrap"><button class="btn sm" data-trips="${o.avail_id}" data-cabin="${o.cabin}" title="uses 1 API call">Flights</button> <a class="btn sm ghost" href="${o.link}" target="_blank" rel="noopener">seats.aero ↗</a></td>
+    </tr>`).join("") + "</tbody></table>";
+}
+function bindTrips(root) {
+  root.querySelectorAll("[data-trips]").forEach(b => b.onclick = async () => {
+    const tr = b.closest("tr");
+    if (tr.nextElementSibling?.classList.contains("detail")) { tr.nextElementSibling.remove(); return; }
+    b.disabled = true; b.textContent = "…";
+    try {
+      const cabinName = CABINS.find(c => c[0] === b.dataset.cabin)[1];
+      const trips = (await api("/api/trips/" + b.dataset.trips)).filter(t => (t.cabin || "").toLowerCase() === cabinName);
+      const d = document.createElement("tr"); d.className = "detail";
+      d.innerHTML = `<td colspan="12">${trips.length ? trips.slice(0, 12).map(t => `<div class="row small" style="gap:14px;padding:3px 0">
+        <b class="num">${fmt(t.miles)}</b><span class="num">+ ${t.currency === "USD" || !t.currency ? "$" : t.currency + " "}${fmt(Math.round(t.taxes))}</span>
+        <span class="mono">${esc(t.flights)}</span><span>${esc(t.departs?.slice(11,16))} → ${esc(t.arrives?.slice(11,16))}${t.arrives && t.departs && dayDiff(t.departs, t.arrives) ? " +" + dayDiff(t.departs, t.arrives) : ""}</span>
+        <span class="muted">${t.stops ? t.stops + " stop" + (t.stops > 1 ? "s" : "") + " via " + t.segments.slice(0, -1).map(s => s.to).join(", ") : "nonstop"} · ${Math.floor(t.duration_min/60)}h${String(t.duration_min%60).padStart(2,"0")}</span>
+        ${t.seats ? `<span class="muted">${t.seats} seats</span>` : ""}<span class="muted">${esc(t.segments.map(s => s.aircraft).filter(Boolean).join(", "))}</span></div>`).join("") : '<span class="muted">No flight-level detail from this program.</span>'}</td>`;
+      tr.after(d);
+    } catch (e) { toast(e.message); }
+    b.disabled = false; b.textContent = "Flights";
+  });
+}
+
+// ---------- watches
+const wForm = $("#w-form"); let editingWatch = null;
+cabinChips(document.querySelector('[data-cabins="w"]'), ["J"]);
+$("#w-new").onclick = () => openWatchForm(null);
+$("#w-cancel").onclick = () => $("#w-formcard").classList.add("hidden");
+function openWatchForm(w) {
+  editingWatch = w ? w.id : null;
+  $("#w-formtitle").textContent = w ? "Edit watch" : "New watch";
+  wForm.reset();
+  const set = (n, v) => { const el = wForm.elements[n]; if (!el) return; if (el.type === "checkbox") el.checked = !!v; else el.value = v ?? ""; };
+  if (w) Object.entries(w).forEach(([n, v]) => set(n, v)); else { set("notify", 1); set("pax", 1); }
+  cabinChips(document.querySelector('[data-cabins="w"]'), w ? codesOf(w.cabins) : ["J"]);
+  $("#w-formcard").classList.remove("hidden"); wForm.elements.name.focus();
+}
+wForm.onsubmit = async e => {
+  e.preventDefault();
+  const f = Object.fromEntries(new FormData(wForm));
+  f.cabins = cabinNames(chipVals(document.querySelector('[data-cabins="w"]')));
+  f.direct_only = wForm.elements.direct_only.checked; f.notify = wForm.elements.notify.checked;
+  const btn = wForm.querySelector("[type=submit]"); btn.disabled = true; btn.textContent = "Checking…";
+  try {
+    const r = await post(editingWatch ? `/api/watches/${editingWatch}` : "/api/watches", f);
+    if (editingWatch) await post(`/api/watches/${editingWatch}/run`);
+    $("#w-formcard").classList.add("hidden");
+    const m = (r.run || []).reduce((a, x) => a + (x.matches || 0), 0);
+    toast(editingWatch ? "Watch updated" : `Watch added · ${m} match${m === 1 ? "" : "es"} right now`);
+    await refresh(); openMatches(r.id || editingWatch);
+  } catch (err) { toast(err.message, 5000); }
+  btn.disabled = false; btn.textContent = "Save & check now";
+};
+function renderWatches() {
+  const el = $("#w-list");
+  if (!S.watches.length) { el.innerHTML = `<div class="empty">No watches yet. Add one here, or ask Claude something like <i>“watch SFO to Tokyo in business, Nov 20–30, under 80k”</i>.</div>`; return; }
+  el.innerHTML = S.watches.map(w => {
+    const js = w.jobs, last = Math.max(0, ...js.map(j => j.last_run || 0)), err = js.find(j => j.error);
+    return `<div class="wcard" data-w="${w.id}">
+      <div class="row spread">
+        <div><span class="wtitle">${esc(w.name)}</span> ${w.enabled ? "" : '<span class="badge b-meh">paused</span>'} ${w.active_matches ? `<span class="badge b-good">${w.active_matches} available</span>` : ""}</div>
+        <div class="row" style="gap:4px">
+          <button class="btn sm" data-act="matches">Matches</button><button class="btn sm" data-act="run" title="uses ~1 API call">Check now</button>
+          <button class="btn sm ghost" data-act="edit">Edit</button><button class="btn sm ghost" data-act="toggle">${w.enabled ? "Pause" : "Resume"}</button><button class="btn sm ghost danger" data-act="del">Delete</button>
+        </div>
+      </div>
+      <div class="sub" style="margin-top:3px">${esc(w.origins)} → ${esc(w.destinations)} · ${esc(w.cabins)} · depart ${w.depart_start} – ${w.depart_end}${w.return_start ? ` · return ${w.return_start} – ${w.return_end}` : ""}${w.max_miles ? ` · ≤ ${fmt(w.max_miles)} mi` : ""} · ${w.pax} pax${w.direct_only ? " · nonstop" : ""}${w.sources ? " · " + esc(w.sources) : ""}</div>
+      <div class="sub">Checked ${ago(last || null)} · aim every ${w.interval_min} min${err ? ` · <span style="color:var(--bad)">${esc(err.error)}</span>` : ""}${w.description ? ` · “${esc(w.description)}”` : ""}</div>
+      <div class="matches hidden" style="margin-top:10px"></div>
+    </div>`;
+  }).join("");
+  el.querySelectorAll("[data-act]").forEach(b => b.onclick = async () => {
+    const id = +b.closest("[data-w]").dataset.w, w = S.watches.find(x => x.id === id);
+    try {
+      if (b.dataset.act === "matches") return openMatches(id, true);
+      if (b.dataset.act === "edit") return openWatchForm(w);
+      if (b.dataset.act === "run") { b.disabled = true; b.textContent = "…"; const r = await post(`/api/watches/${id}/run`); toast(r.run.map(x => `${x.label}: ${x.matches} matches, ${x.new} new`).join(" · ") || "Nothing to check (dates passed?)"); await refresh(); return openMatches(id); }
+      if (b.dataset.act === "toggle") await post(`/api/watches/${id}`, {enabled: !w.enabled});
+      if (b.dataset.act === "del") { if (!confirm(`Delete watch “${w.name}”?`)) return; await api(`/api/watches/${id}`, {method: "DELETE"}); }
+      await refresh();
+    } catch (e) { toast(e.message, 5000); }
+  });
+}
+async function openMatches(id, toggle) {
+  const box = document.querySelector(`[data-w="${id}"] .matches`); if (!box) return;
+  if (toggle && !box.classList.contains("hidden")) { box.classList.add("hidden"); return; }
+  box.classList.remove("hidden"); box.innerHTML = '<div class="sub">Loading…</div>';
+  const rows = await api(`/api/watches/${id}/matches`);
+  box.innerHTML = rows.length ? `<div class="card tablewrap">${offerTable(rows, false)}</div>` : '<div class="sub">Nothing available right now. You\'ll get a notification when something shows up.</div>';
+  bindTrips(box);
+}
+
+// ---------- windows
+const tForm = $("#t-form"); let editingWindow = null;
+function regionChips(sel) { $("#t-regions").innerHTML = S.regions.map(r => `<span class="chip ${sel.includes(r) ? "on" : ""}" data-r="${r}">${r}</span>`).join(""); $$("#t-regions .chip").forEach(c => c.onclick = () => c.classList.toggle("on")); }
+$("#t-new").onclick = () => openWindowForm(null);
+$("#t-cancel").onclick = () => $("#t-formcard").classList.add("hidden");
+function openWindowForm(w) {
+  editingWindow = w ? w.id : null;
+  $("#t-formtitle").textContent = w ? "Edit travel window" : "New travel window";
+  tForm.reset();
+  const dest = (w?.destinations || "").split(",").filter(Boolean);
+  regionChips(dest.filter(d => S.regions.includes(d)));
+  tForm.elements.dest_airports.value = dest.filter(d => !S.regions.includes(d)).join(", ");
+  cabinChips(document.querySelector('[data-cabins="t"]'), w ? codesOf(w.cabins) : ["J"]);
+  if (w) ["name","start_date","end_date","origins","pax"].forEach(n => tForm.elements[n].value = w[n] ?? "");
+  if (w) { tForm.elements.min_score.value = String(w.min_score); ["roundtrip","explore","direct_only","notify"].forEach(n => tForm.elements[n].checked = !!w[n]); }
+  $("#t-formcard").classList.remove("hidden"); tForm.elements.name.focus();
+}
+tForm.onsubmit = async e => {
+  e.preventDefault();
+  const f = Object.fromEntries(new FormData(tForm));
+  const regions = [...$$("#t-regions .chip.on")].map(c => c.dataset.r);
+  f.destinations = [...regions, ...(f.dest_airports || "").split(",").map(s => s.trim()).filter(Boolean)].join(",");
+  delete f.dest_airports;
+  f.cabins = cabinNames(chipVals(document.querySelector('[data-cabins="t"]')));
+  ["roundtrip","explore","direct_only","notify"].forEach(n => f[n] = tForm.elements[n].checked);
+  if (!f.destinations) return toast("Pick at least one region or airport");
+  const btn = tForm.querySelector("[type=submit]"); btn.disabled = true; btn.textContent = "Sweeping…";
+  try {
+    const r = await post(editingWindow ? `/api/windows/${editingWindow}` : "/api/windows", f);
+    if (editingWindow) await post(`/api/windows/${editingWindow}/run`);
+    $("#t-formcard").classList.add("hidden");
+    toast(editingWindow ? "Window updated" : "Window added. Region scans continue in the background.");
+    dealsWindow = String(r.id || editingWindow); await refresh(); show("deals");
+  } catch (err) { toast(err.message, 5000); }
+  btn.disabled = false; btn.textContent = "Save & sweep now";
+};
+function renderWindows() {
+  const el = $("#t-list");
+  const noHome = !S.settings.home_airports;
+  if (!S.windows.length) { el.innerHTML = `<div class="empty">No travel windows yet.${noHome ? ' Set your <a href="#" onclick="show(\'settings\');return false">home airports</a> first, then add a window.' : ""}</div>`; return; }
+  el.innerHTML = (noHome ? `<div class="wcard"><span class="badge b-warn">tip</span> <span class="small">Set <a href="#" onclick="show('settings');return false">home airports</a> so windows can search from where you actually fly.</span></div>` : "") +
+    S.windows.map(w => {
+      const js = w.jobs, last = Math.max(0, ...js.map(j => j.last_run || 0));
+      const n = DEALS.filter(o => o.window_id === w.id && !o.positioning).length;
+      return `<div class="wcard" data-t="${w.id}">
+        <div class="row spread">
+          <div><span class="wtitle">${esc(w.name)}</span> ${w.enabled ? "" : '<span class="badge b-meh">paused</span>'}</div>
+          <div class="row" style="gap:4px">
+            <button class="btn sm" data-act="deals">View deals</button><button class="btn sm" data-act="run" title="uses a few API calls">Sweep now</button>
+            <button class="btn sm ghost" data-act="edit">Edit</button><button class="btn sm ghost" data-act="toggle">${w.enabled ? "Pause" : "Resume"}</button><button class="btn sm ghost danger" data-act="del">Delete</button>
+          </div>
+        </div>
+        <div class="sub" style="margin-top:3px">${w.start_date} – ${w.end_date} · ${esc(w.origins || S.settings.home_airports || "no origin set")} → ${esc(w.destinations)} · ${esc(w.cabins)} · ${w.pax} pax${w.roundtrip ? " · both directions" : " · one way"}${w.direct_only ? " · nonstop" : ""}</div>
+        <div class="sub">Home sweep ${ago(last || null)}${w.explore ? ` · region scans ${w.explore_done}/${w.explore_jobs} done` : ""}</div>
+      </div>`;
+    }).join("");
+  el.querySelectorAll("[data-act]").forEach(b => b.onclick = async () => {
+    const id = +b.closest("[data-t]").dataset.t, w = S.windows.find(x => x.id === id);
+    try {
+      if (b.dataset.act === "deals") { dealsWindow = String(id); return show("deals"); }
+      if (b.dataset.act === "edit") return openWindowForm(w);
+      if (b.dataset.act === "run") { b.disabled = true; b.textContent = "…"; const r = await post(`/api/windows/${id}/run`); toast(r.run.map(x => `${x.label}: ${x.matches} deals`).join(" · ") || "Nothing to sweep"); }
+      if (b.dataset.act === "toggle") await post(`/api/windows/${id}`, {enabled: !w.enabled});
+      if (b.dataset.act === "del") { if (!confirm(`Delete “${w.name}”?`)) return; await api(`/api/windows/${id}`, {method: "DELETE"}); }
+      await refresh();
+    } catch (e) { toast(e.message, 5000); }
+  });
+}
+
+// ---------- points
+function renderPoints() {
+  const box = (el, list) => { if (el.dataset.drawn) return; el.dataset.drawn = 1;
+    el.innerHTML = list.map(([id, name]) => `<label for="pt-${id}">${esc(name)}</label><input type="text" inputmode="numeric" id="pt-${id}" data-acct="${id}" value="${S.balances[id] ? fmt(S.balances[id]) : ""}" placeholder="0">`).join(""); };
+  box($("#p-bank"), S.accounts.bank); box($("#p-airline"), S.accounts.airline); box($("#p-other"), S.accounts.other);
+  const max = Math.max(1, ...S.buying_power.map(b => b.capacity));
+  const rows = S.buying_power.filter(b => b.capacity > 0);
+  $("#p-power").innerHTML = rows.length ? rows.map(b => `<div>${esc(b.name)}</div><div class="track"><i style="width:${b.capacity/max*100}%"></i></div><div class="num" style="text-align:right" title="${esc(b.transfer_from.filter(t => t.balance).map(t => t.name + (t.ratio !== 1 ? ` (${t.ratio}×)` : "")).join(", "))}">${fmt(b.capacity)}</div>`).join("")
+    : '<div class="muted" style="grid-column:1/-1">Enter balances to see what you can book in each program.</div>';
+}
+$("#p-save").onclick = async () => {
+  const body = {}; $$("[data-acct]").forEach(i => body[i.dataset.acct] = i.value.replace(/[^\d]/g, "") || 0);
+  try { await post("/api/balances", body); toast("Balances saved"); $$(".pts").forEach(e => delete e.dataset.drawn); await refresh(); loadDeals(); } catch (e) { toast(e.message); }
+};
+document.addEventListener("focusout", e => { if (e.target.dataset?.acct) { const n = +e.target.value.replace(/[^\d]/g, ""); e.target.value = n ? fmt(n) : ""; } });
+
+// ---------- search
+cabinChips(document.querySelector('[data-cabins="s"]'), ["J"]);
+$("#s-form").onsubmit = async e => {
+  e.preventDefault();
+  const f = Object.fromEntries(new FormData(e.target));
+  f.cabins = cabinNames(chipVals(document.querySelector('[data-cabins="s"]'))); f.direct = e.target.elements.direct.checked;
+  const btn = e.target.querySelector("[type=submit]"); btn.disabled = true; btn.textContent = "Searching…";
+  try {
+    const rows = await post("/api/search", f);
+    $("#s-table").innerHTML = rows.length ? offerTable(rows, true) : '<div class="empty">Nothing found for that search.</div>';
+    bindTrips($("#s-table")); refresh();
+  } catch (err) { toast(err.message, 5000); }
+  btn.disabled = false; btn.textContent = "Search";
+};
+
+// ---------- activity
+async function loadActivity() {
+  const c = await api("/api/calls"), p = S.pacing;
+  const nowH = Math.floor((Date.now()/1000 - c.day_start) / 3600);
+  $("#a-kpis").innerHTML = [
+    [fmt(p.used), "calls used this quota day"], [fmt(p.remaining), "left until reset"],
+    [p.rate_per_hour + "/hr", "current background pace"], [fmt(S.jobs.total), `jobs (${S.jobs.never_run} not run yet)`],
+  ].map(([v, l]) => `<div class="card kpi"><div class="v num">${v}</div><div class="l">${l}</div></div>`).join("");
+  const by = Object.fromEntries(c.hourly.map(h => [h.h, h])), max = Math.max(10, ...c.hourly.map(h => h.bg + h.od));
+  $("#a-bars").innerHTML = Array.from({length: 24}, (_, h) => { const x = by[h] || {bg: 0, od: 0};
+    return `<div class="col ${h > nowH ? "future" : ""}" title="hour ${h + 1}: ${x.bg} background, ${x.od} on demand"><i class="bg" style="height:${x.bg/max*100}%"></i><i class="od" style="height:${x.od/max*100}%"></i></div>`; }).join("");
+  const t0 = new Date(c.day_start * 1000), hh = d => d.toLocaleTimeString([], {hour: "numeric"});
+  $("#a-axis").innerHTML = `<span>${hh(t0)}</span><span>${hh(new Date(t0.getTime() + 12*3600e3))}</span><span>${hh(new Date(t0.getTime() + 24*3600e3))}</span>`;
+  $("#a-kinds").innerHTML = c.kinds.length ? c.kinds.map(x => `<div class="row spread" style="padding:3px 0;border-bottom:1px solid var(--line)"><span>${esc(x.kind)}</span><b class="num">${x.n}</b></div>`).join("") : '<span class="muted">No calls yet today.</span>';
+  $("#a-feed").innerHTML = S.events.length ? S.events.map(ev => `<div class="it"><div class="row spread"><b>${esc(ev.title)}</b><span class="sub">${ago(ev.ts)}</span></div><pre>${esc(ev.body)}</pre>${ev.link ? `<a class="small" href="${esc(ev.link)}" target="_blank" rel="noopener">open on seats.aero ↗</a>` : ""}</div>`).join("") : '<div class="empty">No alerts yet.</div>';
+  $("#a-jobs").innerHTML = `<table><thead><tr><th>Job</th><th>Kind</th><th class="r">Priority</th><th>Last run</th><th class="r">Calls</th><th class="r">Rows</th><th class="r">Matches</th><th>Status</th></tr></thead><tbody>` +
+    c.jobs.sort((a, b) => (b.priority - a.priority) || ((a.last_run || 0) - (b.last_run || 0))).map(j => `<tr><td>${esc(j.label)}</td><td><span class="badge b-${j.kind === "watch" ? "info" : j.kind === "window" ? "good" : "meh"}">${j.kind}</span></td><td class="r">${j.priority}</td><td class="sub">${ago(j.last_run)}</td><td class="r num">${j.calls ?? ""}</td><td class="r num">${j.rows ?? ""}</td><td class="r num">${j.matches ?? ""}</td><td class="small">${j.error ? `<span style="color:var(--bad)">${esc(j.error)}</span>` : j.truncated ? '<span class="badge b-warn">truncated</span>' : ""}</td></tr>`).join("") + "</tbody></table>";
+}
+
+// ---------- settings
+const gForm = $("#g-form");
+function renderSettings(force) {
+  if (gForm.dataset.drawn && !force) return; gForm.dataset.drawn = 1;
+  const s = S.settings;
+  ["home_airports","ondemand_reserve","ntfy_topic","ntfy_server","cpp","tax_allowance_usd","great_score","judge_notes","judge_min_score"].forEach(n => gForm.elements[n].value = s[n] ?? "");
+  $("#g-engine").textContent = cloudMode() ? "· cloud mode (hourly routine)" : "· local mode: Claude judging turns on when the cloud routine is set up";
+  ["paused","mac_notify","ntfy_enabled"].forEach(n => gForm.elements[n].checked = !!s[n]);
+  const bands = S.bands, lbl = bands.map((b, i) => i === bands.length - 1 ? `${fmt(bands[i-1])}+ mi` : `≤ ${fmt(b)} mi`);
+  $("#g-thr").innerHTML = `<thead><tr><th>Cabin</th>${lbl.map(l => `<th class="r">${l}</th>`).join("")}</tr></thead><tbody>` +
+    CABINS.map(([c,, name]) => `<tr><td>${name}</td>${s.thresholds[c].map((v, i) => `<td class="r"><input type="number" step="500" data-thr="${c}:${i}" value="${v}"></td>`).join("")}</tr>`).join("") + "</tbody>";
+}
+$("#g-gen").onclick = () => { const a = new Uint8Array(12); crypto.getRandomValues(a); gForm.elements.ntfy_topic.value = "seatwatch-" + [...a].map(b => b.toString(36).padStart(2, "0")).join("").slice(0, 20); };
+$("#g-test").onclick = async () => { try { await saveSettings(); await post("/api/notify-test"); toast("Test sent"); } catch (e) { toast(e.message); } };
+async function saveSettings() {
+  const f = gForm.elements, thr = JSON.parse(JSON.stringify(S.settings.thresholds));
+  $$("[data-thr]").forEach(i => { const [c, j] = i.dataset.thr.split(":"); thr[c][+j] = +i.value; });
+  await post("/api/settings", {home_airports: f.home_airports.value, ondemand_reserve: +f.ondemand_reserve.value, ntfy_topic: f.ntfy_topic.value.trim(),
+    ntfy_server: f.ntfy_server.value.trim(), cpp: +f.cpp.value, tax_allowance_usd: +f.tax_allowance_usd.value, great_score: +f.great_score.value,
+    paused: f.paused.checked, mac_notify: f.mac_notify.checked, ntfy_enabled: f.ntfy_enabled.checked, thresholds: thr,
+    judge_notes: f.judge_notes.value, judge_min_score: +f.judge_min_score.value || 0.75});
+}
+gForm.onsubmit = async e => { e.preventDefault(); try { await saveSettings(); toast("Settings saved"); await refresh(); renderSettings(true); loadDeals(); } catch (err) { toast(err.message, 5000); } };
+
+// ---------- boot
+async function refresh() {
+  try { S = await api("/api/state"); } catch (e) { toast("Can't reach seatwatch: " + e.message); return; }
+  renderHeader(); renderWatches(); renderWindows(); renderPoints(); renderSettings();
+  if (tab === "deals") renderDeals();
+  if (tab === "activity") loadActivity();
+}
+(async () => {
+  await refresh();
+  let t = "deals"; try { t = localStorage.getItem("sw-tab") || "deals"; } catch (e) {}
+  if (!S?.windows.length && !S?.watches.length) t = Object.values(S?.balances || {}).some(Boolean) ? "windows" : "points";
+  show(t);
+  setInterval(refresh, 20000);
+  setInterval(() => { if (tab === "deals" && !document.hidden) loadDeals(); }, 120000);
+})();
+</script>
+</body>
+</html>

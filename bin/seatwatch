@@ -1,0 +1,6 @@
+#!/bin/bash
+# Runs the seatwatch CLI from this checkout (shares its database with the background service).
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+PY="${SEATWATCH_PYTHON:-/Users/Diego/Miniforge3/bin/python3}"
+[ -x "$PY" ] || PY="$(command -v python3)"
+PYTHONPATH="$DIR" exec "$PY" -m seatwatch.cli "$@"
