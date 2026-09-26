@@ -6,7 +6,9 @@ your job is the judgment. Work from the repository root (the directory containin
 ## Steps (do exactly these, once each)
 
 1. Run `bin/seatwatch-cloud poll`. It prints JSON. If it exits non-zero, skip to step 4 and report the error.
-2. If `to_judge` is greater than 0, read the file at `pending_file`. Judge **every** candidate using the
+2. If `to_judge` is 0 (for example because no watches or windows exist yet), go straight to step 3.
+   Don't read or debug the code; the scripts handle everything, and your report is how problems surface.
+   If `to_judge` is greater than 0, read the file at `pending_file`. Judge **every** candidate using the
    rubric below and write `.cloud/verdicts.json`: a JSON list with one object per candidate,
    `{"id": "<copied exactly>", "verdict": "great" | "good" | "pass", "reason": "<one sentence, max 20 words>"}`.
 3. Run `bin/seatwatch-cloud finish --verdicts .cloud/verdicts.json` (or `bin/seatwatch-cloud finish` with no

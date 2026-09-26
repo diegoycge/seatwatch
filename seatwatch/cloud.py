@@ -115,6 +115,8 @@ def poll(conn) -> dict:
             p = ops.pacing(conn, s)
             allowance = min(allowance, used + int(p["spendable"] / runs_left))
     out = write_pending(conn, s)
+    if not jobs.all_jobs(conn):
+        out["note"] = "no enabled watches or travel windows yet: nothing to poll"
     out.update(connectivity=net, calls=used, allowance=allowance, jobs_run=len(results),
                errors=[r for r in results if r.get("error")], remaining=ops.pacing(conn, s)["remaining"])
     return out
