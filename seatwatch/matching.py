@@ -44,7 +44,7 @@ def parse_places(text) -> tuple:
             regions.add(region_lc[t.lower()])
             continue
         t = t.upper()
-        metro = config.METROS.get(t) or config.METROS.get(t + "*")
+        metro = config.METROS.get(t)  # "LAX" stays LAX; "LAX*" means the whole LA area
         if metro:
             airports.update(metro.split(","))
         elif len(t) == 3 and t.isalpha():
@@ -99,7 +99,7 @@ def compact(r: dict) -> dict:
             "dseats": _int(r.get(f"{c}DirectRemainingSeats")), "dairlines": r.get(f"{c}DirectAirlines") or "",
         }
     return {
-        "id": r.get("ID"), "source": r.get("Source") or route.get("Source"),
+        "id": r.get("ID"), "source": config.SOURCE_ALIASES.get(r.get("Source") or route.get("Source"), r.get("Source") or route.get("Source")),
         "origin": route.get("OriginAirport"), "dest": route.get("DestinationAirport"),
         "origin_region": route.get("OriginRegion"), "dest_region": route.get("DestinationRegion"),
         "distance": _int(route.get("Distance")), "date": (r.get("Date") or "")[:10],

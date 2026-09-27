@@ -232,6 +232,7 @@ textarea { resize: vertical; min-height: 90px; line-height: 1.45; }
       <div class="f s6 row" style="flex-direction:row;gap:16px">
         <label class="check"><input type="checkbox" name="direct_only"> Nonstop only</label>
         <label class="check"><input type="checkbox" name="notify" checked> Notify me</label>
+        <label class="check" title="In cloud mode Claude judges every match; tick this for broad watches"><input type="checkbox" name="picks_only"> Only Claude's good/great picks</label>
         <span style="margin-left:auto" class="row">
           <button type="button" class="btn ghost" id="w-cancel">Cancel</button>
           <button type="submit" class="btn primary">Save &amp; check now</button>
@@ -545,7 +546,7 @@ wForm.onsubmit = async e => {
   e.preventDefault();
   const f = Object.fromEntries(new FormData(wForm));
   f.cabins = cabinNames(chipVals(document.querySelector('[data-cabins="w"]')));
-  f.direct_only = wForm.elements.direct_only.checked; f.notify = wForm.elements.notify.checked;
+  f.direct_only = wForm.elements.direct_only.checked; f.notify = wForm.elements.notify.checked; f.picks_only = wForm.elements.picks_only.checked;
   const btn = wForm.querySelector("[type=submit]"); btn.disabled = true; btn.textContent = "Checking…";
   try {
     const r = await post(editingWatch ? `/api/watches/${editingWatch}` : "/api/watches", f);
@@ -570,7 +571,7 @@ function renderWatches() {
           <button class="btn sm ghost" data-act="edit">Edit</button><button class="btn sm ghost" data-act="toggle">${w.enabled ? "Pause" : "Resume"}</button><button class="btn sm ghost danger" data-act="del">Delete</button>
         </div>
       </div>
-      <div class="sub" style="margin-top:3px">${esc(w.origins)} → ${esc(w.destinations)} · ${esc(w.cabins)} · depart ${w.depart_start} – ${w.depart_end}${w.return_start ? ` · return ${w.return_start} – ${w.return_end}` : ""}${w.max_miles ? ` · ≤ ${fmt(w.max_miles)} mi` : ""} · ${w.pax} pax${w.direct_only ? " · nonstop" : ""}${w.sources ? " · " + esc(w.sources) : ""}</div>
+      <div class="sub" style="margin-top:3px">${esc(w.origins)} → ${esc(w.destinations)} · ${esc(w.cabins)} · depart ${w.depart_start} – ${w.depart_end}${w.return_start ? ` · return ${w.return_start} – ${w.return_end}` : ""}${w.max_miles ? ` · ≤ ${fmt(w.max_miles)} mi` : ""} · ${w.pax} pax${w.direct_only ? " · nonstop" : ""}${w.sources ? " · " + esc(w.sources) : ""}${w.picks_only ? " · Claude's picks only" : ""}</div>
       <div class="sub">Checked ${ago(last || null)} · aim every ${w.interval_min} min${err ? ` · <span style="color:var(--bad)">${esc(err.error)}</span>` : ""}${w.description ? ` · “${esc(w.description)}”` : ""}</div>
       <div class="matches hidden" style="margin-top:10px"></div>
     </div>`;

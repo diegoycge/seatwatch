@@ -94,6 +94,8 @@ def _watch_payload(a) -> dict:
             d[k] = v
     if a.direct is not None:
         d["direct_only"] = a.direct
+    if a.picks_only is not None:
+        d["picks_only"] = a.picks_only
     if getattr(a, "no_return", False):
         d["return_start"] = d["return_end"] = None
     return d
@@ -401,6 +403,10 @@ def build_parser() -> argparse.ArgumentParser:
     w.add_argument("--direct", action="store_const", const=True, default=None, help="nonstop only")
     w.add_argument("--any-stops", dest="direct", action="store_const", const=False)
     w.add_argument("--sources", help="limit to programs, e.g. aeroplan,united")
+    w.add_argument("--picks-only", dest="picks_only", action="store_const", const=True, default=None,
+                   help="(cloud mode) only notify when Claude rates a match good or great")
+    w.add_argument("--all-matches", dest="picks_only", action="store_const", const=False,
+                   help="(cloud mode) notify on every new match, with Claude's take")
     w.add_argument("--priority", type=int, help="1-5 (default 3)")
     w.add_argument("--interval", type=int, help="target minutes between checks (default 45)")
     w.add_argument("--no-run", action="store_true", help="don't check immediately after adding")

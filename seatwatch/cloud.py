@@ -221,8 +221,14 @@ def finish(conn, verdicts_path: str = None) -> dict:
             if n and now - n["at"] < 12 * 3600 and o["cost"] >= n["cost"] * 0.95:
                 continue
             group.append(o)
-        if not group or (group[0].get("owner_kind") != "watch" and verdict == "pass"):
+        if not group:
             continue
+        if verdict == "pass":
+            if group[0].get("owner_kind") != "watch":
+                continue
+            w = conn.execute("SELECT picks_only FROM watches WHERE id = ?", (group[0].get("ref_id"),)).fetchone()
+            if w and w["picks_only"]:
+                continue
         by_owner.setdefault(group[0]["owner_label"], []).append((verdict, reason, sorted(group, key=lambda o: o["date"])))
     sent = 0
     order = {"great": 0, "good": 1, "pass": 2}

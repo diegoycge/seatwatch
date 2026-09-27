@@ -96,6 +96,8 @@ OTHER_ACCOUNTS = [
     ("eva", "EVA Infinity MileageLands"),
     ("southwest", "Southwest Rapid Rewards"),
 ]
+SOURCE_ALIASES = {"copa": "connectmiles"}  # seats.aero returns some programs under another code
+
 SHORT_NAMES = {
     "amex_mr": "Amex MR", "chase_ur": "Chase UR", "citi_ty": "Citi TY", "capone": "Capital One", "bilt": "Bilt",
     "hsbc_us": "HSBC", "wells_fargo": "Wells Fargo", "united": "United", "american": "American", "delta": "Delta",

@@ -18,7 +18,8 @@ CREATE TABLE IF NOT EXISTS watches(
   cabins TEXT NOT NULL DEFAULT 'business', max_miles INTEGER, pax INTEGER NOT NULL DEFAULT 1,
   direct_only INTEGER NOT NULL DEFAULT 0, sources TEXT,
   priority INTEGER NOT NULL DEFAULT 3, interval_min INTEGER NOT NULL DEFAULT 45,
-  enabled INTEGER NOT NULL DEFAULT 1, notify INTEGER NOT NULL DEFAULT 1, created_at REAL);
+  enabled INTEGER NOT NULL DEFAULT 1, notify INTEGER NOT NULL DEFAULT 1, created_at REAL,
+  picks_only INTEGER NOT NULL DEFAULT 0);
 CREATE TABLE IF NOT EXISTS windows(
   id INTEGER PRIMARY KEY, name TEXT NOT NULL,
   start_date TEXT NOT NULL, end_date TEXT NOT NULL,
@@ -59,6 +60,9 @@ def connect() -> sqlite3.Connection:
     conn.execute("PRAGMA journal_mode=WAL")
     conn.execute("PRAGMA busy_timeout=30000")
     conn.executescript(SCHEMA)
+    cols = {r[1] for r in conn.execute("PRAGMA table_info(watches)")}
+    if "picks_only" not in cols:  # added after first release
+        conn.execute("ALTER TABLE watches ADD COLUMN picks_only INTEGER NOT NULL DEFAULT 0")
     return conn
 
 

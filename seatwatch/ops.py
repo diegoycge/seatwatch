@@ -13,7 +13,7 @@ DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 WATCH_FIELDS = {"name": str, "description": str, "origins": str, "destinations": str, "depart_start": str,
                 "depart_end": str, "return_start": str, "return_end": str, "cabins": str, "max_miles": int,
                 "pax": int, "direct_only": bool, "sources": str, "priority": int, "interval_min": int,
-                "enabled": bool, "notify": bool}
+                "enabled": bool, "notify": bool, "picks_only": bool}
 WINDOW_FIELDS = {"name": str, "start_date": str, "end_date": str, "origins": str, "destinations": str,
                  "cabins": str, "pax": int, "direct_only": bool, "roundtrip": bool, "explore": bool,
                  "min_score": float, "notify": bool, "enabled": bool}
@@ -82,7 +82,7 @@ def normalize_watch(d: dict, existing: dict = None) -> dict:
     w["interval_min"] = max(15, int(w.get("interval_min") or 45))
     if not w.get("name"):
         w["name"] = f"{w['origins']} → {w['destinations']}"
-    for k in ("direct_only",):
+    for k in ("direct_only", "picks_only"):
         w[k] = int(w.get(k) or 0)
     for k in ("enabled", "notify"):
         w[k] = 1 if w.get(k) is None else int(w[k])
