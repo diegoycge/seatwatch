@@ -1,0 +1,1 @@
+{"at": 1790629752.5934684, "pacing": {"limit": 1000, "remaining": 934, "reset_at": 1790639999.1640773, "seconds_to_reset": 10246.570422410965, "used": 66, "by_purpose": {"bg": 66}, "reserve": 11, "spendable": 919, "rate_per_hour": 322.9, "bg_floor": 14, "paused": false}}

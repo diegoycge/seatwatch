@@ -1,0 +1,45 @@
+{
+ "cpp": 1.5,
+ "engine": "cloud",
+ "great_score": 1.25,
+ "home_airports": "RDU",
+ "judge_min_score": 0.75,
+ "judge_notes": "",
+ "mac_notify": true,
+ "ntfy_enabled": true,
+ "ntfy_server": "https://ntfy.sh",
+ "ntfy_topic": "seatwatch-feh3ir8gel6karex",
+ "ondemand_reserve": 100,
+ "paused": false,
+ "tax_allowance_usd": 100,
+ "thresholds": {
+  "F": [
+   30000,
+   55000,
+   80000,
+   100000,
+   110000
+  ],
+  "J": [
+   20000,
+   40000,
+   60000,
+   75000,
+   85000
+  ],
+  "W": [
+   15000,
+   30000,
+   45000,
+   55000,
+   65000
+  ],
+  "Y": [
+   10000,
+   20000,
+   30000,
+   40000,
+   45000
+  ]
+ }
+}

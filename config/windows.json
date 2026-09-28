@@ -1,0 +1,19 @@
+[
+ {
+  "cabins": "economy,premium,business,first",
+  "created_at": 1790473263.167606,
+  "destinations": "ANC,FAI",
+  "direct_only": 0,
+  "enabled": 0,
+  "end_date": "2027-01-09",
+  "explore": 1,
+  "id": 1,
+  "min_score": 1.0,
+  "name": "winter break in Alaska",
+  "notify": 1,
+  "origins": "RDU",
+  "pax": 1,
+  "roundtrip": 1,
+  "start_date": "2026-12-09"
+ }
+]

@@ -1,0 +1,24 @@
+[
+ {
+  "cabins": "business,first",
+  "created_at": 1790467441.292861,
+  "depart_end": "2026-12-31",
+  "depart_start": "2026-12-09",
+  "description": "Continental USA to East/Southeast Asia (no Middle East/South Asia), business/first, December 2026 after 12/8",
+  "destinations": "BKK,CAN,CEB,CGK,CTS,DAD,DPS,FUK,HAN,HKG,HKT,HND,ICN,KIX,KUL,MNL,NGO,NRT,OKA,PEK,PKX,PVG,SGN,SIN,SZX,TPE",
+  "direct_only": 0,
+  "enabled": 0,
+  "id": 1,
+  "interval_min": 45,
+  "max_miles": null,
+  "name": "Continental US \u2192 East/SE Asia, Dec 2026",
+  "notify": 1,
+  "origins": "ATL,AUS,BOS,BWI,CLT,DCA,DEN,DFW,DTW,EWR,FLL,IAD,IAH,JFK,LAS,LAX,LGA,MCO,MIA,MSP,OAK,ORD,PDX,PHL,PHX,SAN,SEA,SFO,SJC,SLC",
+  "pax": 1,
+  "picks_only": 1,
+  "priority": 3,
+  "return_end": null,
+  "return_start": null,
+  "sources": null
+ }
+]
